@@ -17,12 +17,12 @@ class TelloControl:
         Tello.RETRY_COUNT = 1          # retry_countは応答が来ないときのリトライ回数
         Tello.RESPONSE_TIMEOUT = 0.01  # 応答が来ないときのタイムアウト時間
         # Telloクラスを使って，telloというインスタンス(実体)を作る
-        self.tello = Tello()
+        self.tello = Tello(host=ip)
         self._connect_tello()
 
         # フラグ関係
-        self.is_running = True         # Telloが動作中か
-        self.is_automode = False       # 自動制御を行うかどうか
+        self.is_running = True    # Telloが動作中か
+        self.is_automode = False  # 自動制御を行うかどうか
         self.is_flip = False
 
         # カメラストリームを取得
@@ -51,8 +51,6 @@ class TelloControl:
 
         # 手検出のセットアップ
         self._setup_hand_detection()
-        self.prev_position = None
-        self.velocity = (0, 0)
 
         self.target_x = int(self.width / 2)   # 画面の中心X座標
         self.target_y = int(self.height / 2)  # 画面の中心Y座標
@@ -152,7 +150,7 @@ class TelloControl:
                     c =  100 if c >  100.0 else c
                     c = -100 if c < -100.0 else c
 
-                    self._send_movement_command(a, b, c, d)
+                    self._tello_rc_control(a, b, c, d)
 
                     # 手のジェスチャーを認識する処理
                     fingers = []
@@ -176,12 +174,6 @@ class TelloControl:
 
                     # 結果を表示
                     cv2.putText(frame, gesture, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-
-
-    def _send_movement_command(self, a, b, c, d):
-        """ Telloへ移動コマンドを送信 """
-        x, y = self.velocity
-        self.tello.send_rc_control(int(a), int(b), int(c), int(d))
 
 
     def _send_periodic_command(self):
@@ -296,6 +288,11 @@ class TelloControl:
                 print('[ERROR] Failed flip')
             time.sleep(1)
             self.is_flip = False
+
+
+    def _tello_rc_control(self, a, b, c, d):
+        """ Telloへ移動コマンドを送信 """
+        self.tello.send_rc_control(int(a), int(b), int(c), int(d))
 
 
 
