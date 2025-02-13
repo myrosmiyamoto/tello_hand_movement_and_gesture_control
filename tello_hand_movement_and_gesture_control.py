@@ -134,8 +134,6 @@ class TelloControl:
                     dy = 0.3 * (self.target_y - center_y)
                     dw = 0.4 * (80 - width)        # 基準顔サイズ100pxとの差分
 
-                    dx = -dx  # 制御方向が逆のため、-1を掛けて逆転させた
-
                     # 旋回方向の不感帯を設定
                     d = 0.0 if abs(dx) < 20.0 else dx   # ±20未満ならゼロにする
                     # 旋回方向のソフトウェアリミッタ(±100を超えないように)
@@ -159,7 +157,6 @@ class TelloControl:
                     # 手のジェスチャーを認識する処理
                     fingers = []
                     # 親指
-                    fingers.append(hand_landmarks.landmark[4].x < hand_landmarks.landmark[3].x)  # 左手の場合、x座標が逆になるので注意
                     # 人差し指～小指
                     for tip_id in [8, 12, 16, 20]:
                         fingers.append(hand_landmarks.landmark[tip_id].y < hand_landmarks.landmark[tip_id - 2].y)
@@ -169,7 +166,7 @@ class TelloControl:
                         gesture = "paper"
                     elif not any(fingers):  # すべての指が閉じている
                         gesture =  "rock"
-                    elif fingers[1] and fingers[2] and not fingers[3] and not fingers[4]:
+                    elif fingers[0] and fingers[1] and not fingers[2] and not fingers[3]:
                         gesture =  "Scissors"  # 人差し指と中指が開いていて、薬指と小指が閉じている
                         if not self.is_flip:
                             self.is_flip = True
@@ -199,7 +196,7 @@ class TelloControl:
         while self.is_running:
             if not self.frame_queue.empty():  # キューの中が空でなければ処理を実行する
                 frame = self.frame_queue.get()  # キューの値を取得
-                frame = cv2.resize(frame, (self.width, self.height))  # フレームのリサイズ
+                frame = cv2.flip(cv2.resize(frame, (self.width, self.height)), 1)  # フレームのリサイズと反転
 
                 self._detect_hand_movement_and_gesture(frame)
 
